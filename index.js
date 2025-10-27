@@ -48,7 +48,6 @@ app.get("/", async (req, res) => {
   const params = req.query;
   const user = params["user"] || randomID();
   const message = params["message"];
-  console.log(user);
   if (message) {
     const query = {
       role: "user",
@@ -60,7 +59,6 @@ app.get("/", async (req, res) => {
     }
 
     users[user].push(query);
-    console.log(users);
     const { response, error, code } = await gpt(users[user]);
 
     if (error) {
@@ -78,6 +76,28 @@ app.get("/", async (req, res) => {
       user,
     });
   }
+  return res.send(`
+    Please use: "<b><u>${req.hostname}/?message=your message here</u></b>" without quotation marks to start. If you're having an id use it to retrieve your chats using "<b><u>${req.hostname}/?message=your message here&user=your_user_id</u></b>"
+  `);
+});
+
+app.get("/chats/:userId", (req, res) => {
+  const params = req.params;
+  if (params.userId) {
+    if (users[params.userId]) {
+      return res.json({
+        message: "Chats retrieved successfully",
+        chats: users[params.userId],
+      });
+    }
+    return res.json({
+      message: "No message found",
+      chats: [],
+    });
+  }
+  res.json({
+    error: "User ID is required",
+  });
 });
 
 app.get("/delete", (req, res) => {
