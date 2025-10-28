@@ -8,6 +8,39 @@ const users = {};
 
 app.use(CORS());
 
+const image = async (prompt, model = "flux", source = "") => {
+  if (source) {
+    source = `&image=${source}`;
+  } else {
+    source = undefined;
+  }
+  const negative_prompt = ["watermark"];
+  console.log("Meow");
+
+  const { data, status } = await axios.get(
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`,
+    {
+      responseType: "arraybuffer",
+      params: {
+        model,
+        source,
+        negative_prompt: negative_prompt.join(" "),
+      },
+    },
+  );
+
+  if (status >= 200 && status < 300) {
+    const buffer = Buffer.from(data, "binary").toString("base64");
+    return {
+      response: `data:image/png;base64,${buffer}`,
+    };
+  }
+  return {
+    error: "System error",
+    code: status,
+  };
+};
+
 const gpt = async (messages) => {
   const { data, status } = await axios.post(
     "https://text.pollinations.ai/openai",
@@ -20,8 +53,14 @@ const gpt = async (messages) => {
     },
   );
   if (status >= 200 && status < 300) {
+    const response = data.choices[0].message.content;
+    if (response.startsWith("Image: ")) {
+      return {
+        response: image(response, "gptimage"),
+      };
+    }
     return {
-      response: data.choices[0].message.content,
+      response,
     };
   }
   return {
@@ -41,7 +80,13 @@ const randomID = () => {
   if (Object.keys(users).includes(id)) {
     return randomID();
   }
-  users[id] = [];
+  users[id] = [
+    {
+      role: "system",
+      content:
+        "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with ` / clear` or ` / cls` to reset. Stay precise, concise, and relevant.",
+    },
+  ];
   return id;
 };
 
@@ -56,7 +101,13 @@ app.get("/", async (req, res) => {
     };
 
     if (!users[user]) {
-      users[user] = [];
+      users[user] = [
+        {
+          role: "system",
+          content:
+            "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with ` / clear` or ` / cls` to reset. Stay precise, concise, and relevant.",
+        },
+      ];
     }
 
     users[user].push(query);
@@ -78,15 +129,15 @@ app.get("/", async (req, res) => {
     });
   }
   return res.send(`
-    <div>
+      < div >
       <h3>Here are the list of commands to use:</h3>
       <ol>
-      <li><a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
-      <li><a href="https://${req.hostname}/?message=your%20message%20here&user=your_id_here">https://${req.hostname}/?message=your message here&user=your_id_here</a> ➙ For using with past conversation retrieval</li>
-      <li><a href="https://${req.hostname}/delete/?user=your_id_here">https://${req.hostname}/delete/?user=your_id_here</a> ➙ Deletion of past conversation based on ID</li>
-      <li><a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
+      <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
+      <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here&user=your_id_here">https://${req.hostname}/?message=your message here&user=your_id_here</a> ➙ For using with past conversation retrieval</li>
+      <li>[GET] <a href="https://${req.hostname}/delete/?user=your_id_here">https://${req.hostname}/delete/?user=your_id_here</a> ➙ Deletion of past conversation based on ID</li>
+      <li>[GET] <a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
       </ol>
-    </div>
+    </div >
   `);
 });
 
@@ -109,6 +160,10 @@ app.get("/chats/:userId", (req, res) => {
   });
 });
 
+app.get("/image", async (req, res) => {
+  return image(req.query.prompt, "gptimage", req.query.source);
+});
+
 app.get("/delete", (req, res) => {
   if (req.query.user) {
     users[req.query.user] = undefined;
@@ -122,5 +177,5 @@ app.get("/delete", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Listening to PORT ${PORT}`);
+  console.log(`Listening to PORT ${PORT} `);
 });
