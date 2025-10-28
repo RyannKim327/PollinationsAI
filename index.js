@@ -84,7 +84,7 @@ app.get("/", async (req, res) => {
       <li><a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
       <li><a href="https://${req.hostname}/?message=your%20message%20here&user=your_id_here">https://${req.hostname}/?message=your message here&user=your_id_here</a> ➙ For using with past conversation retrieval</li>
       <li><a href="https://${req.hostname}/delete/?user=your_id_here">https://${req.hostname}/delete/?user=your_id_here</a> ➙ Deletion of past conversation based on ID</li>
-      <li><a href="https://${req.hostname}/chats/?user=your_id_here">https://${req.hostname}/chats/?user=your_id_here</a> ➙ Retrieval of your past conversation</li>
+      <li><a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
       </ol>
     </div>
   `);
