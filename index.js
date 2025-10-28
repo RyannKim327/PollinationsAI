@@ -34,7 +34,8 @@ const randomID = () => {
   let id = "";
   const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 10; i++) {
+  const total = Math.floor(Math.random() * 10) + 10;
+  for (let i = 0; i < total; i++) {
     id += characters[Math.floor(Math.random() * characters.length)];
   }
   if (Object.keys(users).includes(id)) {
@@ -77,7 +78,15 @@ app.get("/", async (req, res) => {
     });
   }
   return res.send(`
-    Please use: "<b><u>${req.hostname}/?message=your message here</u></b>" without quotation marks to start. If you're having an id use it to retrieve your chats using "<b><u>${req.hostname}/?message=your message here&user=your_user_id</u></b>"
+    <div>
+      <h3>Here are the list of commands to use:</h3>
+      <ol>
+      <li><a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
+      <li><a href="https://${req.hostname}/?message=your%20message%20here&user=your_id_here">https://${req.hostname}/?message=your message here&user=your_id_here</a> ➙ For using with past conversation retrieval</li>
+      <li><a href="https://${req.hostname}/delete/your_id_here">https://${req.hostname}/delete/your_id_here</a> ➙ Deletion of past conversation based on ID</li>
+      <li><a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
+      </ol>
+    </div>
   `);
 });
 
