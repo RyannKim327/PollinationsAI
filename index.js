@@ -84,7 +84,7 @@ const randomID = () => {
     {
       role: "system",
       content:
-        "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with ` / clear` or ` / cls` to reset. Stay precise, concise, and relevant.",
+        "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
     },
   ];
   return id;
@@ -95,6 +95,19 @@ app.get("/", async (req, res) => {
   const user = params["user"] || randomID();
   const message = params["message"];
   if (message) {
+    if (message.startsWith("/clear") || message.startsWith("/cls")) {
+      users[user] = [
+        {
+          role: "system",
+          content:
+            "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
+        },
+      ];
+      return res.json({
+        response: "Chat cleared",
+        user,
+      });
+    }
     const query = {
       role: "user",
       content: message,
@@ -105,7 +118,7 @@ app.get("/", async (req, res) => {
         {
           role: "system",
           content:
-            "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with ` / clear` or ` / cls` to reset. Stay precise, concise, and relevant.",
+            "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
         },
       ];
     }
@@ -130,13 +143,13 @@ app.get("/", async (req, res) => {
   }
   return res.send(`
       <div>
-      <h3>Here are the list of commands to use:</h3>
-      <ol>
-      <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
-      <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here&user=your_id_here">https://${req.hostname}/?message=your message here&user=your_id_here</a> ➙ For using with past conversation retrieval</li>
-      <li>[GET] <a href="https://${req.hostname}/delete/?user=your_id_here">https://${req.hostname}/delete/?user=your_id_here</a> ➙ Deletion of past conversation based on ID</li>
-      <li>[GET] <a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
-      </ol>
+        <h3>Here are the list of commands to use:</h3>
+        <ol>
+        <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
+        <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here&user=your_id_here">https://${req.hostname}/?message=your message here&user=your_id_here</a> ➙ For using with past conversation retrieval</li>
+        <li>[GET] <a href="https://${req.hostname}/delete/?user=your_id_here">https://${req.hostname}/delete/?user=your_id_here</a> ➙ Deletion of past conversation based on ID</li>
+        <li>[GET] <a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
+        </ol>
     </div>
   `);
 });
