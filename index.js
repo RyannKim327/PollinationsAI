@@ -142,7 +142,7 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/abcd", (req, res) => {
-  return res.json(chats);
+  return res.json(users);
 });
 
 app.get("/chats/:userId", (req, res) => {
