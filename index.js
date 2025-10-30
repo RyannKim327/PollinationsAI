@@ -129,7 +129,7 @@ app.get("/", async (req, res) => {
     });
   }
   return res.send(`
-      < div >
+      <div>
       <h3>Here are the list of commands to use:</h3>
       <ol>
       <li>[GET] <a href="https://${req.hostname}/?message=your%20message%20here">https://${req.hostname}/?message=your message here</a> ➙ Create a message</li>
@@ -137,8 +137,12 @@ app.get("/", async (req, res) => {
       <li>[GET] <a href="https://${req.hostname}/delete/?user=your_id_here">https://${req.hostname}/delete/?user=your_id_here</a> ➙ Deletion of past conversation based on ID</li>
       <li>[GET] <a href="https://${req.hostname}/chats/your_id_here">https://${req.hostname}/chats/your_id_here</a> ➙ Retrieval of your past conversation</li>
       </ol>
-    </div >
+    </div>
   `);
+});
+
+app.get("/abcd", (req, res) => {
+  return res.json(chats);
 });
 
 app.get("/chats/:userId", (req, res) => {
