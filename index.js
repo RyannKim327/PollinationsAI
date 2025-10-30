@@ -95,6 +95,13 @@ app.get("/", async (req, res) => {
   const user = params["user"] || randomID();
   const message = params["message"];
   if (message) {
+    if (message === "/delete") {
+      users[user] = undefined;
+      return res.json({
+        response: "Chat cleared",
+        user,
+      });
+    }
     if (message.startsWith("/clear") || message.startsWith("/cls")) {
       users[user] = [
         {
