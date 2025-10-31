@@ -6,35 +6,44 @@ const PORT = process.env.PORT || 3000;
 
 const users = {};
 
+const default_message = [
+  {
+    role: "system",
+    content:
+      "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
+  },
+];
+
 app.use(CORS());
 
 const image = async (prompt, model = "flux", source = "") => {
   if (source) {
-    source = `&image=${source}`;
-  } else {
-    source = undefined;
+    source = `?image=${source}`;
   }
+
   const negative_prompt = ["watermark"];
-  console.log("Meow");
+  console.log(prompt);
 
   const { data, status } = await axios.get(
-    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`,
+    `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}${source}`,
     {
       responseType: "arraybuffer",
-      params: {
-        model,
-        source,
-        negative_prompt: negative_prompt.join(" "),
-      },
+      // params: {
+      //   //   // prompt,
+      //   model,
+      //   // source,
+      //   // negative_prompt: negative_prompt.join(" "),
+      // },
     },
   );
 
   if (status >= 200 && status < 300) {
     const buffer = Buffer.from(data, "binary").toString("base64");
     return {
-      response: `data:image/png;base64,${buffer}`,
+      response: `data:image/jpeg;charset=utf-8;base64,${buffer}`,
     };
   }
+
   return {
     error: "System error",
     code: status,
@@ -80,13 +89,7 @@ const randomID = () => {
   if (Object.keys(users).includes(id)) {
     return randomID();
   }
-  users[id] = [
-    {
-      role: "system",
-      content:
-        "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
-    },
-  ];
+  users[id] = default_message;
   return id;
 };
 
@@ -102,32 +105,22 @@ app.get("/", async (req, res) => {
         user,
       });
     }
+
     if (message.startsWith("/clear") || message.startsWith("/cls")) {
-      users[user] = [
-        {
-          role: "system",
-          content:
-            "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
-        },
-      ];
+      users[user] = default_message;
       return res.json({
         response: "Chat cleared",
         user,
       });
     }
+
     const query = {
       role: "user",
       content: message,
     };
 
     if (!users[user]) {
-      users[user] = [
-        {
-          role: "system",
-          content:
-            "You are a markdown-capable AI assistant that can generate both text and images. Always respond in markdown when possible. Summarize and adapt to the user's current intent based on recent prompts. Detect if the user is requesting an image; if so, combine all related details from previous messages and format the image prompt as `{ sceneDetailed }% 20{ adjective }% 20{ charactersDetailed }% 20{ visualStyle }% 20{ genre }% 20{ artistReference } `. Reply to image requests as `Image: { finalPrompt } `. Infer user preferences (tone, style, detail) from their prompts and use them in future responses. If conversation context becomes too confusing or overloaded, respond with `/clear` or `/cls` to reset. Stay precise, concise, and relevant.",
-        },
-      ];
+      users[user] = default_message;
     }
 
     users[user].push(query);
@@ -148,6 +141,7 @@ app.get("/", async (req, res) => {
       user,
     });
   }
+
   return res.send(`
       <div>
         <h3>Here are the list of commands to use:</h3>
@@ -185,7 +179,8 @@ app.get("/chats/:userId", (req, res) => {
 });
 
 app.get("/image", async (req, res) => {
-  return image(req.query.prompt, "gptimage", req.query.source);
+  const response = await image(req.query.prompt, "flux", req.query.source);
+  return res.send(response);
 });
 
 app.get("/delete", (req, res) => {
